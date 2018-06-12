@@ -8,6 +8,7 @@ import 'package:pointycastle/ecc/curves/secp256k1.dart';
 import 'package:pointycastle/macs/hmac.dart';
 import 'package:web3dart/src/bip39/mnemonic.dart';
 import 'package:web3dart/src/bip39/utils.dart';
+import 'package:web3dart/src/utils/credentials.dart';
 import 'package:web3dart/src/utils/numbers.dart';
 
 List<Uint8List> CKDprivHardened(Uint8List extendedPrivateKey, int index) {
@@ -28,22 +29,18 @@ List<Uint8List> CKDprivHardened(Uint8List extendedPrivateKey, int index) {
   var data = (padding + privateKeyParent + indexByteArray);
 
   var dataByteArray = new Uint8List.fromList(data);
-
-  print("Extended PrivKey Input: ${bytesToHex(extendedPrivateKey)}");
-
-  print("Index Byte Array: ${bytesToHex(indexByteArray)}");
-
-  print("PrivateKey Parent: ${bytesToHex(privateKeyParent)}");
-
-  print("DataBuffer Hex: ${bytesToHex(dataByteArray)}");
-
-  print("Data Buffer size: ${dataByteArray.length}");
+//
+//  print("Extended PrivKey Input: ${bytesToHex(extendedPrivateKey)}");
+//
+//  print("Index Byte Array: ${bytesToHex(indexByteArray)}");
+//
+//  print("PrivateKey Parent: ${bytesToHex(privateKeyParent)}");
+//
+//  print("DataBuffer Hex: ${bytesToHex(dataByteArray)}");
+//
+//  print("Data Buffer size: ${dataByteArray.length}");
 
   Uint8List hmacOutput = hmacSha512(dataByteArray, chainCodeParent);
-
-  print(
-      "hMac512(${bytesToHex(dataByteArray)}, ${bytesToHex(chainCodeParent)})");
-  print("HMac Output: ${bytesToHex(hmacOutput)}");
 
   Uint8List childChainCode = new Uint8List(32);
   Uint8List childPrivateKey = new Uint8List(32);
@@ -83,42 +80,20 @@ List<Uint8List> CKDprivNonHardened(Uint8List extendedPrivateKey, int index) {
 
   var indexByteArray = intToByteArray(hardenedIndex);
 
-  String publicKeyParent = bytesToHex(
-      (new ECCurve_secp256k1().G * bytesToInt(privateKeyParent))
-          .getEncoded(false));
 
-  print("publicKeyParent Len: ${publicKeyParent.length} | $publicKeyParent");
+  String publicKeyParentHex = "04"+Credentials.fromPrivateKey(bytesToInt(privateKeyParent)).publicKey.toRadixString(16);
 
-  var pubKCompressed = getCompressedPubKey(publicKeyParent);
 
-  print("=================================================================");
-
-  print("Pubk Compressed: $pubKCompressed");
-
-  print("=================================================================");
+  var pubKCompressed = getCompressedPubKey(publicKeyParentHex);
 
   var data =
       (intToBytes(BigInt.parse(pubKCompressed, radix: 16)) + indexByteArray);
 
   var dataByteArray = new Uint8List.fromList(data);
 
-  print("Extended PrivKey Input: ${bytesToHex(extendedPrivateKey)}");
-
-  print("Index Byte Array: ${bytesToHex(indexByteArray)}");
-
-  print("PrivateKey Parent: ${bytesToHex(privateKeyParent)}");
-
-  print("PublicKey Parent: ${(publicKeyParent)}");
-
-  print("DataBuffer Hex: ${bytesToHex(dataByteArray)}");
-
-  print("Data Buffer size: ${dataByteArray.length}");
 
   Uint8List hmacOutput = hmacSha512(dataByteArray, chainCodeParent);
 
-  print(
-      "hMac512(${bytesToHex(dataByteArray)}, ${bytesToHex(chainCodeParent)})");
-  print("HMac Output: ${bytesToHex(hmacOutput)}");
 
   Uint8List childChainCode = new Uint8List(32);
   Uint8List childPrivateKey = new Uint8List(32);
@@ -133,9 +108,6 @@ List<Uint8List> CKDprivNonHardened(Uint8List extendedPrivateKey, int index) {
       (BigInt.parse(bytesToHex(privateKeyParent), radix: 16) +
               BigInt.parse(bytesToHex(leftHandHash), radix: 16)) %
           curveParamN;
-
-  print("Addition: ${ bytesToHex(leftHandHash) } + ${ bytesToHex(
-      privateKeyParent)}");
 
   childPrivateKey = intToBytes(privateKeyBigInt);
 
