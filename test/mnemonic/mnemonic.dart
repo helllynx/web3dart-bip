@@ -1,10 +1,4 @@
-import 'dart:typed_data';
-
-import 'package:pointycastle/api.dart';
-import "package:pointycastle/digests/sha512.dart";
-import 'package:pointycastle/macs/hmac.dart';
 import 'package:test/test.dart';
-import 'package:web3dart/src/mnemonic/mnemonic.dart';
 import 'package:web3dart/src/mnemonic/utils.dart';
 import 'package:web3dart/src/utils/numbers.dart';
 
@@ -73,17 +67,63 @@ void main() {
 //    print("PublicKey Hex (L: ${publicKey.length}): $publicKeyHex ");
 //  });
 
-  test("Generate Path Early Tests", () {
-    var seed = MnemonicUtils.generateMasterSeed(
-        "earn only broken federal uniform delay frozen faith usual kit fluid degree omit work recipe song jeans decide auction evolve skull public vivid rotate",
-        "");
-    Uint8List extendedPrivateKey = MnemonicUtils.getRootSeed(seed);
-    var privk = getExtendedPrivateKey(extendedPrivateKey, 0);
-    print(bytesToHex(privk));
+//  test("Generate Path Early Tests", () {
+//    var seed = MnemonicUtils.generateMasterSeed(
+//        "earn only broken federal uniform delay frozen faith usual kit fluid degree omit work recipe song jeans decide auction evolve skull public vivid rotate",
+//        "");
+//    Uint8List extendedPrivateKey = MnemonicUtils.getRootSeed(seed);
+//    var privk = CKDprivHardened(extendedPrivateKey, 19).first;
+//    print(bytesToHex(privk));
+//  });
+
+//  test("Child Private Key Derivation Test ", () {
+//    var data =
+//        "003C6CB8D0F6A264C91EA8B5030FADAA8E538B020F0A387421A12DE9319DC9336880000002";
+//    var parentPrivateKeyHex =
+//        "003C6CB8D0F6A264C91EA8B5030FADAA8E538B020F0A387421A12DE9319DC93368";
+//    Uint8List hmac = hmacSha512(
+//      hexToBytes(data),
+//      hexToBytes(
+//          "2A7857631386BA23DACAC34180DD1983734E444FDBF774041578E9B6ADB37C19"),
+//    );
+//
+//    print("hmac: ${ bytesToHex(hmac) }");
+//
+//    var leftSideHash = new Uint8List(32);
+//    List.copyRange(leftSideHash, 0, hmac, 0, 32);
+//
+//    BigInt cprivk = bytesToInt(leftSideHash) +
+//        BigInt.parse(parentPrivateKeyHex, radix: 16) %
+//            new ECCurve_secp256k1().n;
+//
+//    print("Addition: ${ bytesToHex(leftSideHash) } + ${parentPrivateKeyHex}");
+//
+//    print("cprivk: ${ cprivk
+//        .toRadixString(16) }");
+//
+//    var cpubk = Credentials
+//        .fromHexPrivateKey("ca2a7395e1886a34f846b6ed06f00515aa223b8252fbd9989aa0012d1a46f5f1")
+//        .publicKey
+//        .toRadixString(16);
+//
+
+
+
+
+
+  test("Child Private Key Hardened Derivation Test", () {
+    var extendedPrivateKeyHexInput = hexToBytes(
+        "3C6CB8D0F6A264C91EA8B5030FADAA8E538B020F0A387421A12DE9319DC933682A7857631386BA23DACAC34180DD1983734E444FDBF774041578E9B6ADB37C19");
+
+
+    var childPrivateKeyHardened = CKDprivHardened(
+      extendedPrivateKeyHexInput,
+      2,
+    )[0];
+
+    var cprivkHardHex = bytesToHex(childPrivateKeyHardened);
+
+    expect(cprivkHardHex, "cbce0d719ecf7431d88e6a89fa1483e02e35092af60c042b1df2ff59fa424dca");
   });
+
 }
-
-
-
-
-

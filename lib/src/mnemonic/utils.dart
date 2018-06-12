@@ -1,8 +1,11 @@
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:pointycastle/api.dart';
 import 'package:pointycastle/digests/sha512.dart';
+import 'package:pointycastle/ecc/curves/secp256k1.dart';
 import 'package:pointycastle/macs/hmac.dart';
+import 'package:web3dart/src/utils/numbers.dart';
 
 Uint8List intToByteArray(int data) {
   Uint8List result = new Uint8List(4);
@@ -15,31 +18,64 @@ Uint8List intToByteArray(int data) {
   return result;
 }
 
-Uint8List getExtendedPrivateKey(Uint8List extendedPrivateKey, int index) {
-  var chainCodeParent = new Uint8List(32);
-  var privateKeyParent = new Uint8List(32);
+List<Uint8List> CKDprivHardened(Uint8List extendedPrivateKey, int index) {
+
+  var curveParamN = new ECCurve_secp256k1().n;
+
+  Uint8List chainCodeParent = new Uint8List(32);
+  Uint8List privateKeyParent = new Uint8List(32);
   List.copyRange(privateKeyParent, 0, extendedPrivateKey, 0, 32);
   List.copyRange(chainCodeParent, 0, extendedPrivateKey, 32, 64);
 
-  print('Bit lenght: ${index.bitLength}');
+  int hardenedIndex = pow(2, 31) + index; // For hardened keys we add 2^31 to the index
 
-  var indexByteArray = intToByteArray(index);
+  var indexByteArray = intToByteArray(hardenedIndex);
 
-  int padding = 0x00;
-  var data = (privateKeyParent + indexByteArray).toList(growable: true);
-  data.insert(0, padding);
+  final padding = new Uint8List(1);
+
+  var data = (padding + privateKeyParent + indexByteArray);
 
   var dataByteArray = new Uint8List.fromList(data);
 
-  print("PrivateKey Parent: ${privateKeyParent}");
+  print("Extended PrivKey Input: ${bytesToHex(extendedPrivateKey)}");
 
-  print("DataBuffer Hex: ${dataByteArray}");
+
+  print("Index Byte Array: ${bytesToHex(indexByteArray)}");
+
+  print("PrivateKey Parent: ${bytesToHex(privateKeyParent)}");
+
+  print("DataBuffer Hex: ${bytesToHex(dataByteArray)}");
 
   print("Data Buffer size: ${dataByteArray.length}");
 
-  var key = hmacSha512(dataByteArray, chainCodeParent);
+  Uint8List hmacOutput = hmacSha512(dataByteArray, chainCodeParent);
 
-  return key;
+  print("hMac512(${bytesToHex(dataByteArray)}, ${bytesToHex(chainCodeParent)})");
+  print("HMac Output: ${bytesToHex(hmacOutput)}");
+
+
+
+  Uint8List childChainCode = new Uint8List(32);
+  Uint8List childPrivateKey = new Uint8List(32);
+
+  Uint8List leftHandHash = new Uint8List(32);
+
+  List.copyRange(leftHandHash, 0, hmacOutput, 0, 32);
+  List.copyRange(childChainCode, 0, hmacOutput, 32, 64);
+
+  // https://bitcoin.org/en/developer-guide#hierarchical-deterministic-key-creation
+  BigInt privateKeyBigInt = (BigInt.parse(bytesToHex(privateKeyParent), radix: 16) + BigInt.parse(bytesToHex(leftHandHash), radix: 16)) % curveParamN;
+
+//  print("Addition: ${ bytesToHex(leftHandHash) } + ${ bytesToHex(privateKeyParent)}");
+
+  childPrivateKey = intToBytes(privateKeyBigInt);
+
+  List<Uint8List> chainCodeKeyPair = new List<Uint8List>(2);
+
+  chainCodeKeyPair[0] = childPrivateKey;
+  chainCodeKeyPair[1] = childChainCode;
+
+  return chainCodeKeyPair; // Hold both the child private key and the child chain code
 }
 
 Uint8List hmacSha512(List<int> seed, List<int> passphraseByteArray) {
