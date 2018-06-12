@@ -1,32 +1,49 @@
+import 'dart:math';
+
 import 'package:test/test.dart';
-import 'package:web3dart/src/mnemonic/utils.dart';
+import 'package:web3dart/src/bip39/hdkey.dart';
+import 'package:web3dart/src/bip39/mnemonic.dart';
+import 'package:web3dart/src/utils/credentials.dart';
+import 'package:web3dart/src/utils/dartrandom.dart';
 import 'package:web3dart/src/utils/numbers.dart';
 
 void main() {
-//  test("Mnemonic List Word Loading Test", () {
-//    var mnemonicList = MnemonicUtils.populateWordList();
-//
-//    mnemonicList.forEach((word) => print(word));
-//
-//
-//  });
-//
-//  test("Generate Mnemonic List", () {
-//    Random random = new Random.secure();
-//    var mnemonic = MnemonicUtils.generateMnemonic(new DartRandom(random).nextBytes(32));
-//
-//   print(mnemonic);
-//
-//
-//  });
+  /*test("Mnemonic List Word Loading Test", () {
+    var mnemonicWordList = MnemonicUtils.populateWordList();
+    expect(mnemonicWordList.isNotEmpty, true);
+  });
 
-//  test("Generate Seed", () {
-//    var seed = MnemonicUtils.generateSeed(
-//        "industry cram alley magnet odor crew expose flock frame relax rent diesel",
-//        "");
-//
-//    print(bytesToHex(seed));
-//  });
+  test("Generate Mnemonic List", () {
+    Random random = new Random.secure();
+    var mnemonic =
+        MnemonicUtils.generateMnemonic(new DartRandom(random).nextBytes(32));
+
+    expect(mnemonic.isNotEmpty, true);
+  });*/
+
+  test(
+      "Generate Master Seed From Known Mnemonic List Compare With Pre-Known Seed",
+      () {
+    var seed = MnemonicUtils.generateMasterSeed(
+        "uniform snow notice device spring universe source pulp road meadow slow kind hurry silly crowd",
+        "");
+
+    var masterSeedHex = bytesToHex(seed);
+
+    expect(masterSeedHex,
+        "bada2b2d32593027a42e37bc42196faec8d7a7ecea7ecddbf9cf5ef4bf2e18073bad102048e1a4ae30d0f767822377d13bde1e05f0300f3f7c93e62e279f257e");
+  });
+
+/*  test("Generate Master Seed With Passphrase", () {
+    var seed = MnemonicUtils.generateMasterSeed(
+        "cram vacuum rebuild assault cruise fit dinner asthma crew social unique keen turtle display autumn",
+        "passw0rd");
+
+    var masterSeedHex = bytesToHex(seed);
+
+    expect(masterSeedHex,
+        "004c3148612fb6329be0000971df301f6fbe002a0099f31c043b4b2678ce02aec806f470052b7b1822032bce2871fc3b989bebd2cfcf54a5687137b25753f533");
+  });*/
 
 //  test("Generate Seed Hexadecimal", () {
 //    var seedHex = MnemonicUtils.generateMasterSeedHex(
@@ -107,23 +124,54 @@ void main() {
 //        .toRadixString(16);
 //
 
-
-
-
-
   test("Child Private Key Hardened Derivation Test", () {
-    var extendedPrivateKeyHexInput = hexToBytes(
-        "3C6CB8D0F6A264C91EA8B5030FADAA8E538B020F0A387421A12DE9319DC933682A7857631386BA23DACAC34180DD1983734E444FDBF774041578E9B6ADB37C19");
+
+
+    var rootSeed = getRootSeed(hexToBytes("bada2b2d32593027a42e37bc42196faec8d7a7ecea7ecddbf9cf5ef4bf2e18073bad102048e1a4ae30d0f767822377d13bde1e05f0300f3f7c93e62e279f257e"));
+
+
+
+    print("Root Seed: ${ bytesToHex(rootSeed) }");
+
 
 
     var childPrivateKeyHardened = CKDprivHardened(
-      extendedPrivateKeyHexInput,
-      2,
+      rootSeed,
+      0,
     )[0];
 
-    var cprivkHardHex = bytesToHex(childPrivateKeyHardened);
 
-    expect(cprivkHardHex, "cbce0d719ecf7431d88e6a89fa1483e02e35092af60c042b1df2ff59fa424dca");
+
+    var childChainCode = CKDprivHardened(
+      rootSeed,
+      0,
+    )[1];
+
+    var cprivkHardHex = bytesToHex(childPrivateKeyHardened);
+    var publicKey = Credentials.fromHexPrivateKey(cprivkHardHex).publicKey.toRadixString(16);
+    var address = Credentials.fromHexPrivateKey(cprivkHardHex).addressHex;
+    var chainCodeHex = bytesToHex(childChainCode);
+
+
+
+    print("Private Key: ${cprivkHardHex} \nPublic Key: ${publicKey} \nAddress: ${address} \nChainCode: ${chainCodeHex}");
+
+
+
+
+//    expect(cprivkHardHex,
+//        "cbce0d719ecf7431d88e6a89fa1483e02e35092af60c042b1df2ff59fa424dca");
   });
 
+//  test("Child Private Key Non Hardened Derivation Test", () {
+//    var extendedPrivateKeyHexInput = hexToBytes(
+//        "3C6CB8D0F6A264C91EA8B5030FADAA8E538B020F0A387421A12DE9319DC933682A7857631386BA23DACAC34180DD1983734E444FDBF774041578E9B6ADB37C19");
+//
+//    var childPrivateKeyHardened = CKDprivNonHardened(
+//      extendedPrivateKeyHexInput,
+//      2,
+//    )[0];
+//
+//    var cprivkHardHex = bytesToHex(childPrivateKeyHardened);
+//  });
 }

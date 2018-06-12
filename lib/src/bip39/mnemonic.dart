@@ -8,7 +8,6 @@ import "package:pointycastle/digests/sha512.dart";
 import "package:pointycastle/key_derivators/api.dart";
 import "package:pointycastle/key_derivators/pbkdf2.dart";
 import 'package:pointycastle/macs/hmac.dart';
-import 'package:web3dart/src/utils/numbers.dart';
 
 class MnemonicUtils {
   static final int SEED_ITERATIONS = 2048;
@@ -45,7 +44,7 @@ class MnemonicUtils {
     return mnemonicBuilder.toString();
   }
 
-  // Generate the master seed from the mnemonic and the passphrase [The passphrase is optional]
+// Generate the master seed from the mnemonic and the passphrase [The passphrase is optional]
   static Uint8List generateMasterSeed(String mnemonic, String passphrase) {
     validateMnemonic(mnemonic);
     passphrase = passphrase == null ? "" : passphrase;
@@ -59,46 +58,6 @@ class MnemonicUtils {
     var masterSeedByteArray = derivator.process(utf8.encode(mnemonic));
 
     return masterSeedByteArray;
-  }
-
-  static Uint8List getMasterPrivateKey(Uint8List masterSeed) {
-    Uint8List rootSeed = getRootSeed(masterSeed);
-
-    var privateKey = new Uint8List(32);
-    /// The first 256 bits are saved as Master Private Key
-    List.copyRange(privateKey, 0, rootSeed, 0, 32);
-    return privateKey;
-  }
-
-  static Uint8List getMasterChainCode(Uint8List masterSeed) {
-    Uint8List rootSeed = getRootSeed(masterSeed);
-
-    var chainCode = new Uint8List(32);
-    List.copyRange(chainCode, 0, rootSeed, 32, 64);
-
-    /// The last 256 bits are saved as Master Chain code
-    return chainCode;
-  }
-
-  static Uint8List getRootSeed(Uint8List masterSeed) {
-    var passphrase = "Bitcoin seed";
-    var passphraseByteArray = utf8.encode(passphrase);
-
-    var hmac = new HMac(new SHA512Digest(), 128);
-
-    var rootSeed = new Uint8List(hmac.macSize);
-
-    hmac.init(new KeyParameter(passphraseByteArray));
-
-    hmac.update(masterSeed, 0, masterSeed.length);
-
-    hmac.doFinal(rootSeed, 0);
-    return rootSeed;
-  }
-
-  static String generateMasterSeedHex(String mnemonic, String passphrase) {
-    var seed = MnemonicUtils.generateMasterSeed(mnemonic, passphrase);
-    return bytesToHex(seed);
   }
 
   static List<String> populateWordList() {
