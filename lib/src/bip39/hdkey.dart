@@ -8,7 +8,6 @@ import 'package:pointycastle/ecc/curves/secp256k1.dart';
 import 'package:pointycastle/macs/hmac.dart';
 import 'package:web3dart/src/bip39/mnemonic.dart';
 import 'package:web3dart/src/bip39/utils.dart';
-import 'package:web3dart/src/utils/credentials.dart';
 import 'package:web3dart/src/utils/numbers.dart';
 
 List<Uint8List> CKDprivHardened(Uint8List extendedPrivateKey, int index) {
@@ -72,12 +71,6 @@ List<Uint8List> CKDprivHardened(Uint8List extendedPrivateKey, int index) {
   return chainCodeKeyPair; // Hold both the child private key and the child chain code
 }
 
-
-
-
-
-
-
 List<Uint8List> CKDprivNonHardened(Uint8List extendedPrivateKey, int index) {
   var curveParamN = new ECCurve_secp256k1().n;
 
@@ -86,14 +79,26 @@ List<Uint8List> CKDprivNonHardened(Uint8List extendedPrivateKey, int index) {
   List.copyRange(privateKeyParent, 0, extendedPrivateKey, 0, 32);
   List.copyRange(chainCodeParent, 0, extendedPrivateKey, 32, 64);
 
-  int hardenedIndex =
-      pow(2, 31) + index; // For hardened keys we add 2^31 to the index
+  int hardenedIndex = index; //
 
   var indexByteArray = intToByteArray(hardenedIndex);
 
-  var publicKeyParent =  intToBytes(Credentials.fromHexPrivateKey(bytesToHex(privateKeyParent)).publicKey) ;
+  String publicKeyParent = bytesToHex(
+      (new ECCurve_secp256k1().G * bytesToInt(privateKeyParent))
+          .getEncoded(false));
 
-  var data = (publicKeyParent + indexByteArray);
+  print("publicKeyParent Len: ${publicKeyParent.length} | $publicKeyParent");
+
+  var pubKCompressed = getCompressedPubKey(publicKeyParent);
+
+  print("=================================================================");
+
+  print("Pubk Compressed: $pubKCompressed");
+
+  print("=================================================================");
+
+  var data =
+      (intToBytes(BigInt.parse(pubKCompressed, radix: 16)) + indexByteArray);
 
   var dataByteArray = new Uint8List.fromList(data);
 
@@ -103,12 +108,11 @@ List<Uint8List> CKDprivNonHardened(Uint8List extendedPrivateKey, int index) {
 
   print("PrivateKey Parent: ${bytesToHex(privateKeyParent)}");
 
-  print("PublicKey Parent: ${bytesToHex(publicKeyParent)}");
+  print("PublicKey Parent: ${(publicKeyParent)}");
 
   print("DataBuffer Hex: ${bytesToHex(dataByteArray)}");
 
   print("Data Buffer size: ${dataByteArray.length}");
-
 
   Uint8List hmacOutput = hmacSha512(dataByteArray, chainCodeParent);
 
@@ -127,10 +131,11 @@ List<Uint8List> CKDprivNonHardened(Uint8List extendedPrivateKey, int index) {
   // https://bitcoin.org/en/developer-guide#hierarchical-deterministic-key-creation
   BigInt privateKeyBigInt =
       (BigInt.parse(bytesToHex(privateKeyParent), radix: 16) +
-          BigInt.parse(bytesToHex(leftHandHash), radix: 16)) %
+              BigInt.parse(bytesToHex(leftHandHash), radix: 16)) %
           curveParamN;
 
-  print("Addition: ${ bytesToHex(leftHandHash) } + ${ bytesToHex(privateKeyParent)}");
+  print("Addition: ${ bytesToHex(leftHandHash) } + ${ bytesToHex(
+      privateKeyParent)}");
 
   childPrivateKey = intToBytes(privateKeyBigInt);
 
@@ -141,23 +146,6 @@ List<Uint8List> CKDprivNonHardened(Uint8List extendedPrivateKey, int index) {
 
   return chainCodeKeyPair; // Hold both the child private key and the child chain code
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 Uint8List getMasterPrivateKey(Uint8List masterSeed) {
   Uint8List rootSeed = getRootSeed(masterSeed);
@@ -200,5 +188,12 @@ String generateMasterSeedHex(String mnemonic, String passphrase) {
   return bytesToHex(seed);
 }
 
-String exportExtendedPrivKey ({String network, String depth, String parenFingerPrint, String KeyIndex, String chainCode, String Key}) {}
-String exportExtendedPubKey () {}
+String exportExtendedPrivKey(
+    {String network,
+    String depth,
+    String parenFingerPrint,
+    String KeyIndex,
+    String chainCode,
+    String Key}) {}
+
+String exportExtendedPubKey() {}

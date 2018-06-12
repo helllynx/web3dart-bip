@@ -1,10 +1,8 @@
-import 'dart:math';
-
 import 'package:test/test.dart';
 import 'package:web3dart/src/bip39/hdkey.dart';
 import 'package:web3dart/src/bip39/mnemonic.dart';
+import 'package:web3dart/src/bip39/utils.dart';
 import 'package:web3dart/src/utils/credentials.dart';
-import 'package:web3dart/src/utils/dartrandom.dart';
 import 'package:web3dart/src/utils/numbers.dart';
 
 void main() {
@@ -124,7 +122,7 @@ void main() {
 //        .toRadixString(16);
 //
 
-  test("Child Private Key Hardened Derivation Test", () {
+  /*test("Child Private Key Hardened Derivation Test", () {
 
 
     var rootSeed = getRootSeed(hexToBytes("bada2b2d32593027a42e37bc42196faec8d7a7ecea7ecddbf9cf5ef4bf2e18073bad102048e1a4ae30d0f767822377d13bde1e05f0300f3f7c93e62e279f257e"));
@@ -159,19 +157,53 @@ void main() {
 
 
 
-//    expect(cprivkHardHex,
-//        "cbce0d719ecf7431d88e6a89fa1483e02e35092af60c042b1df2ff59fa424dca");
+    expect(address,
+        "0xdc04c29a3ce6c09edf7b3b38ae3f39413148a8ba");
+  });*/
+
+  test("Child Private Key Non Hardened Derivation Test", () {
+    var rootSeed = getRootSeed(hexToBytes(
+        "271ef7ac032bb8a313e2d3339ac6bc308bd984de98c6095767b7496a517708d6ade22355e0415e771a732e3db45fe3e15da7ad7550cda08787b3902a1d092e15"));
+
+    print("Root Seed: ${ bytesToHex(rootSeed) }");
+
+    var childPrivateKeyHardened = CKDprivNonHardened(
+      rootSeed,
+      0,
+    )[0];
+
+    var childChainCode = CKDprivNonHardened(
+      rootSeed,
+      0,
+    )[1];
+
+    var cprivkHardHex = bytesToHex(childPrivateKeyHardened);
+    var publicKey = Credentials
+        .fromHexPrivateKey(cprivkHardHex)
+        .publicKey
+        .toRadixString(16);
+    var address = Credentials.fromHexPrivateKey(cprivkHardHex).addressHex;
+    var chainCodeHex = bytesToHex(childChainCode);
+
+    print(
+        "Private Key: ${cprivkHardHex} \nPublic Key: ${publicKey} \nAddress: ${address} \nChainCode: ${chainCodeHex}");
+
+    expect(address,
+        "0x81e873d1be33d0e4b044d5c0ebeb27834ddea944");
+//
   });
 
-//  test("Child Private Key Non Hardened Derivation Test", () {
-//    var extendedPrivateKeyHexInput = hexToBytes(
-//        "3C6CB8D0F6A264C91EA8B5030FADAA8E538B020F0A387421A12DE9319DC933682A7857631386BA23DACAC34180DD1983734E444FDBF774041578E9B6ADB37C19");
-//
-//    var childPrivateKeyHardened = CKDprivNonHardened(
-//      extendedPrivateKeyHexInput,
-//      2,
-//    )[0];
-//
-//    var cprivkHardHex = bytesToHex(childPrivateKeyHardened);
-//  });
+
+
+
+  /*test("Public key compression", () {
+    var pubk =
+        "04"+"a563d19906ea9208d6e6879cab449646571420f7ce2236890fdd71f73eadc75e64c540ad3ddf64b379d7a56f4baa16a83a7957db2c6f4243ada01a45bef39852";
+
+    var pubKeyCompr = (getCompressedPubKey((pubk)));
+
+    print("\n${pubKeyCompr}");
+  });
+
+  print("RAND PUB : ${Credentials.generateNew().publicKey.toRadixString(16)}");*/
 }
